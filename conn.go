@@ -137,13 +137,13 @@ func (c *conn) tunnel(remoteConn net.Conn) {
 	go func() {
 		_, err := c.brc.WriteTo(remoteConn)
 		if err != nil {
-			log.Printf("%#v\n", err)
+			log.Printf("%+v\n", err)
 		}
 		remoteConn.Close()
 	}()
 	_, err := io.Copy(c.rwc, remoteConn)
 	if err != nil {
-		log.Printf("%#v\n", err)
+		log.Printf("%+v\n", err)
 	}
 }
 
