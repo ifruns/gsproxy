@@ -4,15 +4,13 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/op/go-logging"
 	"io"
+	"log"
 	"net"
 	"net/textproto"
 	"net/url"
 	"strings"
 )
-
-var connLogger *logging.Logger = logging.MustGetLogger("Conn")
 
 type conn struct {
 	rwc    net.Conn
@@ -22,22 +20,22 @@ type conn struct {
 
 // serve tunnel the client connection to remote host
 func (c *conn) serve() {
-    defer c.rwc.Close()
+	defer c.rwc.Close()
 	rawHttpRequestHeader, remote, credential, isHttps, err := c.getTunnelInfo()
 	if err != nil {
-		connLogger.Error(err)
+		log.Printf("%+v\n", err)
 		return
 	}
 
 	if c.auth(credential) == false {
-		connLogger.Error("Auth fail: " + credential)
+		log.Println("Auth fail: " + credential)
 		return
 	}
 
-	connLogger.Info("connecting to " + remote)
+	log.Println("connecting to " + remote)
 	remoteConn, err := net.Dial("tcp", remote)
 	if err != nil {
-		connLogger.Error(err)
+		log.Printf("%+v\n", err)
 		return
 	}
 
@@ -45,22 +43,22 @@ func (c *conn) serve() {
 		// if https, should sent 200 to client
 		_, err = c.rwc.Write([]byte("HTTP/1.1 200 Connection established\r\n\r\n"))
 		if err != nil {
-			connLogger.Error(err)
+			log.Printf("%+v\n", err)
 			return
 		}
 	} else {
 		// if not https, should sent the request header to remote
 		_, err = rawHttpRequestHeader.WriteTo(remoteConn)
 		if err != nil {
-			connLogger.Error(err)
+			log.Printf("%+v\n", err)
 			return
 		}
 	}
 
 	// build bidirectional-streams
-	connLogger.Info("begin tunnel", c.rwc.RemoteAddr(), "<->", remote)
+	log.Println("begin tunnel", c.rwc.RemoteAddr(), "<->", remote)
 	c.tunnel(remoteConn)
-    connLogger.Info("stop tunnel", c.rwc.RemoteAddr(), "<->", remote)
+	log.Println("stop tunnel", c.rwc.RemoteAddr(), "<->", remote)
 }
 
 // getClientInfo parse client request header to get some information:
@@ -129,7 +127,7 @@ func (c *conn) auth(credential string) bool {
 	_, err := c.rwc.Write(
 		[]byte("HTTP/1.1 407 Proxy Authentication Required\r\nProxy-Authenticate: Basic realm=\"*\"\r\n\r\n"))
 	if err != nil {
-		connLogger.Error(err)
+		log.Printf("%+v\n", err)
 	}
 	return false
 }
@@ -139,13 +137,13 @@ func (c *conn) tunnel(remoteConn net.Conn) {
 	go func() {
 		_, err := c.brc.WriteTo(remoteConn)
 		if err != nil {
-			connLogger.Warning(err)
+			log.Printf("%#v\n", err)
 		}
-        remoteConn.Close()
+		remoteConn.Close()
 	}()
 	_, err := io.Copy(c.rwc, remoteConn)
 	if err != nil {
-		connLogger.Warning(err)
+		log.Printf("%#v\n", err)
 	}
 }
 

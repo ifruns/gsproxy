@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"github.com/yangxikun/gsproxy"
+	"github.com/ifruns/gsproxy"
 )
 
 func main() {
@@ -10,6 +10,6 @@ func main() {
 	auth := flag.String("auth", "", "basic credentials(username:password)")
 	genAuth := flag.Bool("genAuth", false, "generate credentials for auth")
 	flag.Parse()
-	server := gsproxy.NewServer(*http, *auth, *genAuth)
-	server.Start()
+	server := gsproxy.New(*http, *auth, *genAuth)
+	server.ListenAndServe()
 }

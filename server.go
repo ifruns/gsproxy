@@ -3,12 +3,11 @@ package gsproxy
 import (
 	"bufio"
 	"encoding/base64"
-	"github.com/op/go-logging"
+	"golang.org/x/xerrors"
+	"log"
 	"net"
 	"strings"
 )
-
-var servLogger *logging.Logger = logging.MustGetLogger("Server")
 
 type Server struct {
 	listener   net.Listener
@@ -17,7 +16,7 @@ type Server struct {
 }
 
 // NewServer create a proxy server
-func NewServer(Addr, credential string, genAuth bool) *Server {
+func New(Addr, credential string, genAuth bool) *Server {
 	if genAuth {
 		credential = RandStringBytesMaskImprSrc(16) + ":" +
 			RandStringBytesMaskImprSrc(16)
@@ -26,23 +25,22 @@ func NewServer(Addr, credential string, genAuth bool) *Server {
 }
 
 // Start a proxy server
-func (s *Server) Start() {
+func (s *Server) ListenAndServe() error {
 	var err error
 	s.listener, err = net.Listen("tcp", s.addr)
 	if err != nil {
-		servLogger.Fatal(err)
+		return xerrors.Errorf("%w", err)
 	}
 
-    if s.credential != "" {
-        servLogger.Infof("use %s for auth\n", s.credential)
-    }
-	servLogger.Infof("proxy listen in %s, waiting for connection...\n", s.addr)
+	if s.credential != "" {
+		log.Printf("use %s for auth\n", s.credential)
+	}
+	log.Printf("proxy listen in %s, waiting for connection...\n", s.addr)
 
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
-			servLogger.Error(err)
-			continue
+			return xerrors.Errorf("%w", err)
 		}
 		go s.newConn(conn).serve()
 	}

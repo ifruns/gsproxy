@@ -5,11 +5,11 @@ Installing from source
 
 To install, run
 
-    $ go get github.com/yangxikun/gsproxy
+    $ go get github.com/ifruns/gsproxy
 
 Build
 
-    $ go install github.com/yangxikun/gsproxy/cmd/gsproxy 
+    $ go install github.com/ifruns/gsproxy/cmd/gsproxy 
 
 You will now find a `gsproxy` binary in your `$GOPATH/bin` directory.
 
